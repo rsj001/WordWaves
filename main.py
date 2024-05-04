@@ -271,7 +271,7 @@ def webhook():
                 payload=payload))
             abort(abort_code)
 
-        if payload['ref'] != 'refs/heads/master':
+        if payload['ref'] != 'refs/heads/main':
             return pyjson5.dumps({'msg': 'Not master; ignoring'})
 
         repo = git.Repo(app.root_path)
