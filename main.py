@@ -205,7 +205,7 @@ def page_not_found(e):
     return render_template('404.html'), 404
 
 
-def get_dir_size(path='.'):
+def get_dir_size(path='../'):
     total = 0
     with os.scandir(path) as it:
         for entry in it:
