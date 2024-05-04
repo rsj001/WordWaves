@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Status</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="sticky-bar">
+        <a href="/">Home</a>
+        <a href="/exercises">Exercises</a>
+        <a href="/about">About</a>
+        <a href="/status">Status</a>
+    </div>
+    <div class="container">
+        <h1>Server Status</h1>
+        <ul>
+            <li>CPU Usage: {{ cpu_percent }}%</li>
+            <li>Used Disk Space: {{ used_disk }} MB out of 512.0 MB quota</li>
+        </ul>
+    </div>
+</body>
+</html>

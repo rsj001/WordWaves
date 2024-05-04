@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EnglishQuest - Problem Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+    <div class="sticky-bar">
+        <a href="/">Home</a>
+        <a href="/exercises">Exercises</a>
+        <a href="/about">About</a>
+        <a href="/status">Status</a>
+    </div>
+    <div class="container">
+        <h1>Problem Management</h1>
+
+        <div class="btn-group">
+            <button id="add-problem-btn" class="btn">Add New Problem</button>
+            <button id="add-text-btn" class="btn">Add New Text</button>
+            <button id="upload-audio-btn" class="btn">Upload New Audio</button>
+        </div>
+
+        <div id="add-problem-section">
+            <h2>Add New Problem</h2>
+            <form class="edit-form" id="add-problem-form">
+                <label for="text_id">Exercise ID:</label>
+                <input type="text" id="text_id" name="text_id"><br>
+                <label for="problem_data_raw">Problem Data (Natural format):</label><br>
+                <textarea id="problem_data_raw" name="problem_data_raw" rows="15" cols="50"></textarea><br>
+                <input type="button" class="btn" value="1. Auto Parse" id="auto-detect-btn"><br>
+                <label for="problem_data">Problem Data (JSON format):</label><br>
+                <textarea id="problem_data" name="problem_data" rows="15" cols="50"></textarea><br>
+                <input type="submit" value="2. Add Problem">
+                <div id="problem-result"></div>
+            </form>
+            <div id="problem_help">
+                <h2>Problem Data Format (Natural):</h2>
+                <p>Enter the problem data with the following structure, seperated by an empty line:</p>
+                <pre>Type of problem (e.g., "radio", "checkbox", "blank")
+Question
+Options or Answer (for "radio" or "checkbox" types)
+Answer (for "blank" type)</pre>
+                <p>Example:</p>
+                <pre>radio
+
+What is the main topic of the text?
+
+Telephones
+Cars
+Technology
+
+1</pre>
+                <b>Note: For "radio" and "checkbox" types, the answer is 0-indexed. For example, the answer for this example is Cars.</b>
+                <p>Click the "Auto Detect" button to automatically parse the data into JSON format.</p>
+                <h2>Problem Data Format (JSON):</h2>
+                <p>Enter problem data in JSON format with the following structure:</p>
+                <pre>
+{
+    "type": "radio", /* Type of problem: "radio", "checkbox", or "blank" */
+    "question": "What is the main topic of the text?",
+    "options": ["Telephones", "Cars", "Technology"], /* List of options for radio or checkbox type */
+    "answer": [1] /* Index of correct option (for radio or checkbox) or a set of possible correct answer strings (for blank) */
+}</pre>
+                <pre>{
+    "type": "blank",
+    "question": "What is the main topic of the text?",
+    "answer": ["Cars", "cars", "car", "Car"]
+}</pre>
+                <pre>{
+    "type": "checkbox",
+    "question": "What is **NOT** the main topic of the text?",
+    "options": ["Telephones", "Cars", "Technology"],
+    "answer": [0, 2]
+}</pre>
+            </div>
+        </div>
+
+        <div id="add-text-section" style="display: none;">
+            <h2>Add New Text</h2>
+            <form class="edit-form" id="add-text-form">
+                <label for="text_title">Title:</label><br>
+                <input type="text" id="text_title" name="text_title"><br>
+                <label for="text_content">Text Content:</label><br>
+                <textarea id="text_content" name="text_content" rows="15" cols="50"></textarea><br>
+                <input type="submit" value="Add Text">
+                <div id="text-result"></div>
+            </form>
+            <div id="text_help">
+                <h2>Text Data Format:</h2>
+                <p>Enter text content in Markdown format. You can include audio placeholders like [audio=1] and problem
+                    placeholders like [problem=1].</p>
+                <p>Example:</p>
+                <pre>
+#### Read the following text, and then listen to the audio, and answer problems.
+Will Your Next Car Drive Itself?
+\nYou know how much your telephone has changed over the past 10 years?
+Your car will change even more than that in the **next 10 years**.
+Now listen this audio:
+[audio=1]
+Answer these Multiple-Choice problems:
+[problem=1]
+[problem=2]
+Then fill in the blanks:
+[problem=3]
+                </pre>
+            </div>
+        </div>
+
+        <div id="upload-audio-section" style="display: none;">
+            <h2>Upload New Audio</h2>
+            <form class="edit-form" id="upload-audio-form" enctype="multipart/form-data">
+                <label for="audio_file">Select Audio File:</label><br>
+                <input type="file" id="audio_file" name="audio_file"><br>
+                <label for="text_id">Exercise ID:</label>
+                <input type="text" id="text_id" name="text_id"><br>
+                <input type="submit" value="Upload Audio">
+                Please be patient while uploading and click the upload button only once.
+                <div id="audio-result"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('auto-detect-btn').addEventListener('click', function () {
+            var problemData = document.getElementById('problem_data_raw').value;
+
+            try {
+                var lines = problemData.split("\n\n");
+                var jsonData = {};
+
+                lines.forEach((line, index) => {
+                    var key;
+                    switch (index) {
+                        case 0:
+                            key = 'type';
+                            var type = line.trim();
+                            if (type !== 'radio' && type !== 'checkbox') {
+                                type = 'blank';
+                            }
+                            jsonData[key] = type;
+                            break;
+                        case 1:
+                            key = 'question';
+                            jsonData[key] = line.trim();
+                            break;
+                        case 2:
+                            key = jsonData['type'] === 'blank' ? 'answer' : 'options';
+                            jsonData[key] = line.trim().split("\n");
+                            break;
+                        case 3:
+                            key = 'answer';
+                            jsonData[key] = line.trim().split("\n");
+                            break;
+                        default:
+                            key = 'unknown';
+                    }
+                });
+
+                var jsonOutput = JSON.stringify(jsonData, null, 2);
+                document.getElementById('problem_data').value = jsonOutput;
+            } catch (error) {
+                alert("Invalid JSON format.");
+            }
+        });
+
+        // Function to display result in a box
+        function displayResultInBox(id, message, isSuccess) {
+            var resultBox = document.createElement('div');
+            resultBox.classList.add('result-box');
+            resultBox.classList.add(isSuccess ? 'success' : 'error');
+            resultBox.innerHTML = `<strong>${id}</strong>: ${message}`;
+            return resultBox;
+        }
+
+        // Button listeners to switch between sections
+        document.getElementById('add-problem-btn').addEventListener('click', function () {
+            document.getElementById('add-problem-section').style.display = 'block';
+            document.getElementById('add-text-section').style.display = 'none';
+            document.getElementById('upload-audio-section').style.display = 'none';
+        });
+
+        document.getElementById('add-text-btn').addEventListener('click', function () {
+            document.getElementById('add-problem-section').style.display = 'none';
+            document.getElementById('add-text-section').style.display = 'block';
+            document.getElementById('upload-audio-section').style.display = 'none';
+        });
+
+        document.getElementById('upload-audio-btn').addEventListener('click', function () {
+            document.getElementById('add-problem-section').style.display = 'none';
+            document.getElementById('add-text-section').style.display = 'none';
+            document.getElementById('upload-audio-section').style.display = 'block';
+        });
+
+        // Add event listener for adding a new problem
+        document.getElementById('add-problem-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            fetch('/add_problem', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    var resultBox = displayResultInBox('Problem ID', data.problem_id, true);
+                    document.getElementById('problem-result').appendChild(resultBox);
+                })
+                .catch(error => {
+                    var resultBox = displayResultInBox('Error', 'Failed to add problem', false);
+                    document.getElementById('problem-result').appendChild(resultBox);
+                });
+        });
+
+        // Add event listener for adding a new text
+        document.getElementById('add-text-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            fetch('/add_text', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    var resultBox = displayResultInBox('Exercise ID', data.text_id, true);
+                    document.getElementById('text-result').appendChild(resultBox);
+                })
+                .catch(error => {
+                    var resultBox = displayResultInBox('Error', 'Failed to add text', false);
+                    document.getElementById('text-result').appendChild(resultBox);
+                });
+        });
+
+        // Add event listener for uploading audio
+        document.getElementById('upload-audio-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            fetch('/upload_audio', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    var resultBox = displayResultInBox('Audio ID', data.audio_id, true);
+                    document.getElementById('audio-result').appendChild(resultBox);
+                })
+                .catch(error => {
+                    var resultBox = displayResultInBox('Error', 'Failed to upload audio', false);
+                    document.getElementById('audio-result').appendChild(resultBox);
+                });
+        });
+    </script>
+</body>
+
+</html>

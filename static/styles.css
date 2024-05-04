@@ -1,0 +1,262 @@
+body {
+    margin: 0;
+    font-family: "Arial Rounded MT Bold", sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    text-align: justify;
+}
+
+.container {
+    max-width: 800px;
+    margin: 80px auto;
+    padding: 0 20px;
+    animation: slideIn 0.6s ease;
+}
+
+form {
+    margin-bottom: 5px;
+}
+
+.exercise-container {
+    padding: 20px;
+    border-radius: 10px;
+    background-color: #fff;
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    animation: fadeIn 0.5s ease;
+}
+
+.results-container {
+    padding: 20px;
+    border-radius: 10px;
+    background-color: #fff;
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
+    margin-top: 20px;
+    animation: fadeIn 0.5s ease;
+}
+
+.problem {
+    margin-bottom: 20px;
+    padding: 15px 15px 30px 15px;
+    border-radius: 10px;
+    background-color: #f1f1f1;
+    transition: background-color 0.3s ease;
+    position: relative;
+    box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.1);
+}
+
+.problem:hover {
+    background-color: #e6e6e6;
+}
+
+.status {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: none;
+}
+
+.status span {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 20px;
+    font-size: 14px;
+}
+
+.status .correct {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.status .incorrect {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.submit-container {
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+}
+
+.submit-all {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.submit-all:hover {
+    background-color: #0056b3;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+/* Underline input style for blank problems */
+.underline-input {
+    border: none;
+    border-bottom: 1px solid #333;
+    padding: 5px;
+    width: 100%;
+    font-size: 16px;
+    transition: border-bottom-color 0.3s ease;
+    outline: none;
+    color: #009;
+    background-color: transparent;
+}
+
+.underline-input:focus {
+    border-bottom-color: #007bff;
+}
+
+.sticky-bar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background-color: #0056b3;
+    padding: 10px 0;
+    text-align: center;
+    z-index: 1000;
+    animation: slideDown 0.5s ease;
+}
+
+.sticky-bar a {
+    padding: 10px;
+    text-decoration: none;
+    color: #fff;
+    transition: background-color 0.3s ease;
+}
+
+.sticky-bar a:hover {
+    background-color: #004080;
+}
+
+h1 {
+    margin-top: 40px;
+}
+
+p {
+    margin: 5px
+}
+
+.result-box {
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 5px;
+    color: #fff;
+}
+
+.result-box.success {
+    background-color: #4CAF50;
+}
+
+.result-box.error {
+    background-color: #f44336;
+}
+
+.btn-group {
+    margin-bottom: 20px;
+}
+
+.btn {
+    padding: 10px 20px;
+    margin-right: 10px;
+    margin-bottom: 8px;
+    border: none;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: #fff;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background-color: #45a049;
+}
+.edit-form {
+    margin-top: 20px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.edit-form input[type="text"],
+.edit-form textarea {
+    width: 97%;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    resize: vertical; /* Allow vertical resizing */
+}
+
+.edit-form select {
+    width: 97%;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.edit-form input[type="submit"] {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.edit-form input[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+.edit-form input[type="file"] {
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.edit-form input[type="file"]:hover {
+    background-color: #f0f0f0;
+}

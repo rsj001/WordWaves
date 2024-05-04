@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EnglishQuest - Text Editor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="sticky-bar">
+        <a href="/">Home</a>
+        <a href="/exercises">Exercises</a>
+        <a href="/about">About</a>
+        <a href="/status">Status</a>
+    </div>
+    <div class="container">
+        <h1>Text Editor</h1>
+
+        <div id="edit-text-section" class="edit-form">
+            <h2>Edit Text</h2>
+            <form id="edit-text-form">
+                <label for="edit_text_id">Exercise ID:</label><br>
+                <input type="text" id="edit_text_id" name="edit_text_id" value="{{ original_text_id }}"><br>
+                <label for="edit_text_title">Title:</label><br>
+                <input type="text" id="edit_text_title" name="edit_text_title" value="{{ original_text_title }}"><br>
+                <label for="edit_text_content">Content:</label><br>
+                <textarea id="edit_text_content" name="edit_text_content" rows="15" cols="50">{{ original_text_content }}</textarea><br>
+                <label for="edit_text_visibility">Visibility:</label><br>
+                <select id="edit_text_visibility" name="edit_text_visibility">
+                    <option value="public" {{ 'selected' if original_text_visibility == 'public' else '' }}>Public</option>
+                    <option value="private" {{ 'selected' if original_text_visibility == 'private' else '' }}>Private</option>
+                </select><br>
+                <input type="submit" value="Save Changes">
+                <div id="edit-text-result"></div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Function to display result in a box
+        function displayResultInBox(id, message, isSuccess) {
+            var resultBox = document.createElement('div');
+            resultBox.classList.add('result-box');
+            resultBox.classList.add(isSuccess ? 'success' : 'error');
+            resultBox.innerHTML = `<strong>${id}</strong>: ${message}`;
+            return resultBox;
+        }
+
+        // Add event listener for saving changes
+        document.getElementById('edit-text-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            var editTextId = document.getElementById('edit_text_id').value;
+            var editTextTitle = document.getElementById('edit_text_title').value;
+            var editTextContent = document.getElementById('edit_text_content').value;
+            var editVisibility = document.getElementById('edit_text_visibility').value;
+
+            var formData = new FormData();
+            formData.append('edit_text_id', editTextId);
+            formData.append('edit_text_title', editTextTitle);
+            formData.append('edit_text_content', editTextContent);
+            formData.append('edit_text_visibility', editVisibility);
+
+            fetch('/save_text_changes', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                var resultBox = displayResultInBox('Success', 'Changes saved successfully', true);
+                document.getElementById('edit-text-result').appendChild(resultBox);
+            })
+            .catch(error => {
+                var resultBox = displayResultInBox('Error', 'Failed to save changes', false);
+                document.getElementById('edit-text-result').appendChild(resultBox);
+            });
+        });
+    </script>
+</body>
+</html>
