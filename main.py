@@ -1,5 +1,5 @@
 from flask import Flask, render_template, jsonify, request, send_file, abort
-import sqlite3, psutil, os, pyjson5
+import sqlite3, psutil, os, pyjson5, git
 
 app = Flask(__name__)
 DB_FILE = 'english_practice.db'
@@ -220,6 +220,16 @@ def server_status():
     cpu_percent = psutil.cpu_percent()
     used_disk = round(get_dir_size() / (1024 ** 2), 2)
     return render_template('status.html', cpu_percent=cpu_percent, used_disk=used_disk)
+
+@app.route('/update_server', methods=['POST'])
+def webhook():
+    if request.method == 'POST':
+        repo = git.Repo(app.root_path)
+        origin = repo.remotes.origin
+        origin.pull()
+        return 'Updated successfully', 200
+    else:
+        return 'Wrong type', 400
 
 if __name__ == '__main__':
     app.run(debug=True)

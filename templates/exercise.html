@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise {{text_id}}</title>
+    <script src="https://cdn.jsdelivr.net/npm/showdown@1.9.1/dist/showdown.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="sticky-bar">
+        <a href="/">Home</a>
+        <a href="/exercises">Exercises</a>
+        <a href="/about">About</a>
+        <a href="/status">Status</a>
+    </div>
+
+    <div class="container">
+        <div class="exercise-container">
+            <!-- Text content will be inserted here dynamically -->
+        </div>
+
+        <div class="submit-container">
+            <button class="submit-all">Submit All Answers</button>
+        </div>
+
+        <div class="results-container" style="display: none;">
+            <p>Total Score: <span id="total-score"></span>/<span id="total-questions"></span></p>
+        </div>
+    </div>
+
+
+    <script>
+        function parseMarkdown(text) {
+            const converter = new showdown.Converter();
+            return converter.makeHtml(text);
+        }
+
+        fetch('/get_text_content/{{text_id}}')
+            .then(response => response.json())
+            .then(data => {
+                // Parse Markdown text content
+                let parsedContent = parseMarkdown(data.content);
+                // Replace placeholders with actual audio and problem content
+                let content = parsedContent
+                    .replace(/\[audio=(\d+)\]/g, '<audio src="/get_audio/$1" controls></audio>')
+                    .replace(/\[problem=(\d+)\]/g, '<div id="problem-$1" class="problem">Loading problem...</div>');
+
+                // Insert content into exercise container
+                document.querySelector('.exercise-container').innerHTML = content;
+
+                // Fetch and insert problem content
+                let problems = document.querySelectorAll('[id^="problem-"]');
+                problems.forEach(problem => {
+                    let problemId = problem.id.split('-')[1];
+                    fetch('/get_problem/' + problemId)
+                        .then(response => response.json())
+                        .then(problemData => {
+                            let problemHtml = '';
+                            switch(problemData.type) {
+                                case 'radio':
+                                    problemHtml = getRadioProblemHtml(problemData, problemId);
+                                    break;
+                                case 'checkbox':
+                                    problemHtml = getCheckboxProblemHtml(problemData, problemId);
+                                    break;
+                                case 'blank':
+                                    problemHtml = getBlankProblemHtml(problemData, problemId);
+                                    break;
+                            }
+                            problem.innerHTML = `<div id="status-${problemId}" class="status"></div>${problemHtml}`;
+                        });
+                });
+            });
+
+        // Function to get radio problem HTML
+        function getRadioProblemHtml(problemData, problemId) {
+            let options = '';
+            problemData.options.forEach((option, index) => {
+                options += `<input type="radio" name="problem-${problemId}" value="${index}">${option}<br>`;
+            });
+            return `${parseMarkdown(problemData.question)}${options}`;
+        }
+
+        // Function to get checkbox problem HTML
+        function getCheckboxProblemHtml(problemData, problemId) {
+            let options = '';
+            problemData.options.forEach((option, index) => {
+                options += `<input type="checkbox" name="problem-${problemId}" value="${index}">${option}<br>`;
+            });
+            return `${parseMarkdown(problemData.question)}${options}`;
+        }
+
+        // Function to get blank problem HTML
+        function getBlankProblemHtml(problemData, problemId) {
+            return `${parseMarkdown(problemData.question)}<input type="text" name="problem-${problemId}" class="underline-input" placeholder="Type your answer here"><br>`;
+        }
+        var first_attempt = true;
+        // Submit all answers
+        document.querySelector('.submit-all').addEventListener('click', function() {
+            let confirmSubmit = 1;
+            if (first_attempt) {
+                confirmSubmit = confirm('Are you sure you want to submit your answers?');
+            }
+            
+            if (confirmSubmit) {
+                let problems = document.querySelectorAll('[id^="problem-"]');
+                let answers = {};
+
+                problems.forEach(problem => {
+                    let problemId = problem.id.split('-')[1];
+                    let selectedOptions = document.querySelectorAll(`input[name="problem-${problemId}"]:checked`);
+                    if (selectedOptions.length > 0) {
+                        answers[problemId] = [...selectedOptions].map(option => option.value);
+                    }
+                    else {
+                        let input = document.querySelector(`input[name="problem-${problemId}"]`);
+                        if (input) {
+                            answers[problemId] = input.value;
+                        }
+                    }
+                });
+
+                fetch('/check_results', {
+                    method: 'POST',
+                    body: JSON.stringify({ answers: answers }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Display total score
+                    if(first_attempt) {
+                        document.getElementById('total-score').innerText = data.total_score;
+                        document.getElementById('total-questions').innerText = data.total_questions;  
+                        if (data.total_questions != 0) {
+                            var scoreRate = data.total_score / data.total_questions;
+                            var scoreComment;
+                            if (scoreRate == 1.0) {
+                                scoreComment = "Perfect!";
+                            } else if (scoreRate >= 0.8) {
+                                scoreComment = "Excellent job!";
+                            } else if (scoreRate >= 0.6) {
+                                scoreComment = "Good job!";
+                            } else if (scoreRate >= 0.4) {
+                                scoreComment = "Not bad!";
+                            } else {
+                                scoreComment = "You can do better!";
+                            }
+                            var congratulationMessage = "Your score: " + data.total_score + "/" + data.total_questions + "\n" + scoreComment;
+                            alert(congratulationMessage);
+                        }
+                    }
+                    // Update status for each problem
+                    for (let problemId in answers) {
+                        let statusElement = document.getElementById(`status-${problemId}`);
+                        if (data.correct_answers[problemId]) {
+                            statusElement.innerHTML = '<span class="status correct">&#10004;</span>'; // Green tick
+                        } else {
+                            statusElement.innerHTML = '<span class="status incorrect">&#10008;</span>'; // Red cross
+                        }
+                        statusElement.style.display = 'inline-block';
+                    }
+                    if (first_attempt) {
+                        document.querySelector('.results-container').style.display = 'block';
+                        first_attempt = false;
+                        document.querySelector('.submit-all').innerHTML = 'Re-check Answers';
+                        // document.querySelector('.submit-all').setAttribute('disabled', true); // Disable submit button after checking
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        });
+    </script>
+</body>
+</html>
