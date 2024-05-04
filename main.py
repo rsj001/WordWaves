@@ -2,6 +2,7 @@ from flask import Flask, render_template, jsonify, request, send_file, abort
 import sqlite3, psutil, os, pyjson5, git
 import hmac, hashlib
 
+w_secret = os.getenv("SECRET_KEY")
 app = Flask(__name__)
 DB_FILE = 'english_practice.db'
 
@@ -205,7 +206,6 @@ def edit_problem(problem_id):
 def page_not_found(e):
     return render_template('404.html'), 404
 
-
 def get_dir_size(path='../'):
     total = 0
     with os.scandir(path) as it:
@@ -221,8 +221,6 @@ def server_status():
     cpu_percent = psutil.cpu_percent()
     used_disk = round(get_dir_size() / (1024 ** 2), 2)
     return render_template('status.html', cpu_percent=cpu_percent, used_disk=used_disk)
-
-w_secret = os.getenv("SECRET_KEY")
 
 def is_valid_signature(x_hub_signature, data, private_key):
     hash_algorithm, github_signature = x_hub_signature.split('=', 1)
