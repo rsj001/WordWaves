@@ -1,5 +1,6 @@
 from flask import Flask, render_template, jsonify, request, send_file, abort
 import sqlite3, psutil, os, pyjson5, git
+import hmac, hashlib
 
 app = Flask(__name__)
 DB_FILE = 'english_practice.db'
@@ -221,15 +222,72 @@ def server_status():
     used_disk = round(get_dir_size() / (1024 ** 2), 2)
     return render_template('status.html', cpu_percent=cpu_percent, used_disk=used_disk)
 
+w_secret = os.getenv("SECRET_KEY")
+
+def is_valid_signature(x_hub_signature, data, private_key):
+    hash_algorithm, github_signature = x_hub_signature.split('=', 1)
+    algorithm = hashlib.__dict__.get(hash_algorithm)
+    encoded_key = bytes(private_key, 'latin-1')
+    mac = hmac.new(encoded_key, msg=data, digestmod=algorithm)
+    return hmac.compare_digest(mac.hexdigest(), github_signature)
+
 @app.route('/update_server', methods=['POST'])
 def webhook():
-    if request.method == 'POST':
+    if request.method != 'POST':
+        return 'OK'
+    else:
+        abort_code = 418
+        # Do initial validations on required headers
+        if 'X-Github-Event' not in request.headers:
+            abort(abort_code)
+        if 'X-Github-Delivery' not in request.headers:
+            abort(abort_code)
+        if 'X-Hub-Signature' not in request.headers:
+            abort(abort_code)
+        if not request.is_json:
+            abort(abort_code)
+        if 'User-Agent' not in request.headers:
+            abort(abort_code)
+        ua = request.headers.get('User-Agent')
+        if not ua.startswith('GitHub-Hookshot/'):
+            abort(abort_code)
+
+        event = request.headers.get('X-GitHub-Event')
+        if event == "ping":
+            return pyjson5.dumps({'msg': 'Hi!'})
+        if event != "push":
+            return pyjson5.dumps({'msg': "Wrong event type"})
+
+        x_hub_signature = request.headers.get('X-Hub-Signature')
+        # webhook content type should be application/json for request.data to have the payload
+        # request.data is empty in case of x-www-form-urlencoded
+        if not is_valid_signature(x_hub_signature, request.data, w_secret):
+            print('Deploy signature failed: {sig}'.format(sig=x_hub_signature))
+            abort(abort_code)
+
+        payload = request.get_json()
+        if payload is None:
+            print('Deploy payload is empty: {payload}'.format(
+                payload=payload))
+            abort(abort_code)
+
+        if payload['ref'] != 'refs/heads/master':
+            return pyjson5.dumps({'msg': 'Not master; ignoring'})
+
         repo = git.Repo(app.root_path)
         origin = repo.remotes.origin
-        origin.pull()
-        return 'Updated successfully', 200
-    else:
-        return 'Wrong type', 400
+
+        pull_info = origin.pull()
+
+        if len(pull_info) == 0:
+            return pyjson5.dumps({'msg': "Didn't pull any information from remote!"})
+        if pull_info[0].flags > 128:
+            return pyjson5.dumps({'msg': "Didn't pull any information from remote!"})
+
+        commit_hash = pull_info[0].commit.hexsha
+        build_commit = f'build_commit = "{commit_hash}"'
+        print(f'{build_commit}')
+        return 'Updated PythonAnywhere server to commit {commit}'.format(commit=commit_hash)
 
 if __name__ == '__main__':
     app.run(debug=True)
