@@ -23,7 +23,11 @@ WordWaves is a web application for learning English through interactive exercise
 git clone https://github.com/rsj001/WordWaves.git
 ```
 
-2. Install dependencies.
+2. Install dependencies:
+
+```
+pip install -r requirements.txt
+```
 
 3. Run the application:
 
