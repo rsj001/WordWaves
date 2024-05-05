@@ -29,13 +29,19 @@ git clone https://github.com/rsj001/WordWaves.git
 pip install -r requirements.txt
 ```
 
-3. Run the application:
+3. Initialize the database:
+
+```
+python init.py
+```
+
+4. Run the application:
 
 ```
 python main.py
 ```
 
-4. Access the application in your web browser at `http://localhost:5000`.
+5. Access the application in your web browser at `http://localhost:5000`.
 
 ## Contributing
 
