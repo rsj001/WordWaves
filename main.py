@@ -109,7 +109,7 @@ def check_results():
         if problem_data['type'] in ('radio', 'checkbox'):
             correct_answers[problem_id] = set(answer) == set(str(i) for i in problem_data['answer'])
         elif problem_data['type'] == 'blank':
-            correct_answers[problem_id] = answer in set(str(i) for i in problem_data['answer'])
+            correct_answers[problem_id] = answer.lower() in set(str(i).lower() for i in problem_data['answer'])
         if correct_answers[problem_id]:
             total_score += 1
 
